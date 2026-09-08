@@ -71,6 +71,12 @@ export const EX = {
   liss_tread:      { name: 'Treadmill LISS', bp: 'cardio', rest: 0, cue: 'Steady walk or incline walk. Should feel easy.' },
 };
 
+// Feeder sets are prescribed on every movement. `fd` is the feeder count for relative work:
+// two ramp sets on compound movements, one on isolation work. Override per item with fd: n in the
+// builders below. Max-effort, speed and test work use ladders defined in engine.js (FEEDER_LADDERS).
+const TWO_FEEDERS = new Set(['leg_press', 'hack_single', 'rdl', 'glute_ham', 'stiff_leg', 'rack_pull', 'cs_row', 'meadows_row', 'pulldown', 'pullup', 'cable_row', 'db_row', 'hs_incline', 'hs_flat', 'cg_bench', 'dips', 'jm_press']);
+for (const [id, ex] of Object.entries(EX)) ex.fd = ex.bp === 'cardio' ? 0 : (TWO_FEEDERS.has(id) ? 2 : 1);
+
 // ---- builders ----
 const P = (ex, lift, pct, sets, reps, extra = {}) => ({ ex, load: { type: 'pct', lift, pct }, sets, reps, ...extra });
 // Two-wave speed work: first half of the sets at pctA, second half at pctB.

@@ -73,6 +73,23 @@ Finishing test day B recalculates all three 1RMs from the best logged triple on 
 Brzycki, Epley, Lander and O'Conner, rounded down to 5 lb. The old numbers go to history with the delta.
 The cycle counter increments after the last session of week 13.
 
+## Feeder sets
+
+Every lifting movement prescribes its feeders. They are listed in the plan, shown as italic chips on the
+exercise screen, and pre-filled first in the set entry with the feeder flag on, so the tap order is feeders
+then working sets. Feeders never count toward volume, tonnage, or hit/miss.
+
+| Work | Ladder | Where to edit |
+|---|---|---|
+| Max effort | 40% x 5, 50% x 3, 60% x 3, 70% x 2, 80% x 1 of the 1RM, stopping 10% below the first top set | `FEEDER_LADDERS.top` in `js/engine.js` |
+| Speed squat, bench, pulls | 50% and 75% of the day's working weight, working reps | `FEEDER_LADDERS.speed` |
+| Test day | 50% x 3, 60% x 2, 70% x 1, 80% x 1, 90% x 1 of the current 1RM | `FEEDER_LADDERS.test` |
+| Compound accessories | 60% and 80% of the working weight, working reps | `TWO_FEEDERS` set in `js/program.js`, `FEEDER_LADDERS.rel2` |
+| Isolation accessories | 75% of the working weight, working reps | `FEEDER_LADDERS.rel1` |
+
+The deload week keeps one feeder per movement. Override a single movement with `fd: n` on its builder line
+in `js/program.js`. Check the counts and percentages against the book and adjust there.
+
 ## Progression rules as implemented
 
 - Percentage work never looks at history. It reads the stored 1RM and rounds down to the barbell increment.

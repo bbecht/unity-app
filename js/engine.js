@@ -24,6 +24,34 @@ export function est1RM(weight, reps, inc = 5) {
 
 export function phaseOf(week) { return PHASES[week] || ''; }
 
+// ---- feeder ladders ----
+// Percentages are of the 1RM for max-effort and test work, and of the day's working weight for
+// speed and relative work. Edit these to match the book; counts for relative work live in program.js.
+export const FEEDER_LADDERS = {
+  // Max effort: climb toward the first top set. Rungs at or above (first top - 10%) are dropped.
+  top: [{ pct: 40, reps: 5 }, { pct: 50, reps: 3 }, { pct: 60, reps: 3 }, { pct: 70, reps: 2 }, { pct: 80, reps: 1 }],
+  // Speed work: two ramps below the working weight, same reps as the working sets.
+  speed: [50, 75],
+  // Test day: singles ladder below the opener.
+  test: [{ pct: 50, reps: 3 }, { pct: 60, reps: 2 }, { pct: 70, reps: 1 }, { pct: 80, reps: 1 }, { pct: 90, reps: 1 }],
+  // Relative work: two feeders on compounds, one on isolation, as a share of the working weight.
+  rel2: [60, 80],
+  rel1: [75],
+};
+
+function feedersFor(mode, { oneRM, work, reps, firstTopPct, count }, inc, week) {
+  let list = [];
+  if (mode === 'top') list = FEEDER_LADDERS.top.filter((r) => r.pct <= firstTopPct - 10).map((r) => ({ pct: r.pct, reps: r.reps, weight: pctLoad(oneRM, r.pct, inc), of: '1RM' }));
+  else if (mode === 'test') list = FEEDER_LADDERS.test.map((r) => ({ pct: r.pct, reps: r.reps, weight: pctLoad(oneRM, r.pct, inc), of: '1RM' }));
+  else if (mode === 'pct') list = FEEDER_LADDERS.speed.map((p) => ({ pct: p, reps, weight: pctLoad(work, p, inc), of: 'work' }));
+  else if (mode === 'rel') {
+    const pcts = count >= 2 ? FEEDER_LADDERS.rel2 : count === 1 ? FEEDER_LADDERS.rel1 : [];
+    list = pcts.map((p) => ({ pct: p, reps, weight: work ? pctLoad(work, p, inc) : null, of: 'work' }));
+  }
+  if (week === 10 && list.length > 1) list = list.slice(-1); // deload: one feeder is enough
+  return list;
+}
+
 // ---- cycle position ----
 export function posLabel(pos) {
   const tpl = weekTemplates(pos.week)[pos.idx];
@@ -98,7 +126,7 @@ export function prescribe(item, state, cycle, week) {
 
   if (L.type === 'cardio') return { ...base, mode: 'cardio', minutes: item.minutes };
 
-  if (L.type === 'test') return { ...base, mode: 'test', lift: L.lift, current: maxes[L.lift] };
+  if (L.type === 'test') return { ...base, mode: 'test', lift: L.lift, current: maxes[L.lift], feeders: feedersFor('test', { oneRM: maxes[L.lift] }, inc, week) };
 
   if (L.type === 'pct') {
     const sets = [];
@@ -107,12 +135,12 @@ export function prescribe(item, state, cycle, week) {
       sets.push({ pct: p, weight: pctLoad(maxes[L.lift] * scale, p, inc), reps: item.reps });
     }
     const label = L.pct2 ? `${L.pct}% / ${L.pct2}%` : `${L.pct}%`;
-    return { ...base, mode: 'pct', lift: L.lift, sets, reps: item.reps, weight: sets[0].weight, pctLabel: label, anchored: true };
+    return { ...base, mode: 'pct', lift: L.lift, sets, reps: item.reps, weight: sets[0].weight, pctLabel: label, anchored: true, feeders: feedersFor('pct', { work: sets[0].weight, reps: item.reps }, inc, week) };
   }
 
   if (L.type === 'top') {
     const tops = L.tops.map((t) => ({ pct: t.pct, weight: pctLoad(maxes[L.lift] * scale, t.pct, inc), reps: t.reps }));
-    const feeders = [40, 50, 60].map((p) => ({ pct: p, weight: pctLoad(maxes[L.lift] * scale, p, inc), reps: 3 }));
+    const feeders = feedersFor('top', { oneRM: maxes[L.lift] * scale, firstTopPct: tops[0].pct }, inc, week);
     return { ...base, mode: 'top', lift: L.lift, sets: tops, feeders, reps: tops[0].reps, weight: tops[tops.length - 1].weight, anchored: true, drop: false };
   }
 
@@ -120,29 +148,33 @@ export function prescribe(item, state, cycle, week) {
   const prog = item.prog || { k: 'reps', add: 2 };
   const out = { ...base, mode: 'rel', sets: item.sets, reps: item.reps, drop: !!item.drop, prog, anchored: false, basis: 'none', weight: null };
 
+  // Feeders are a share of the working weight; when unanchored they carry the percentage only.
+  const fdCount = item.fd ?? ex.fd ?? 1;
+  const done = () => { out.feeders = feedersFor('rel', { work: out.weight, reps: out.reps, count: fdCount }, inc, week); return out; };
+
   if (prog.k === 'transition') {
     const l = base.last;
     if (l && l.weight > 0) { out.anchored = true; out.basis = 'transition'; out.weight = roundDown(l.weight * 0.9, inc); }
-    return out;
+    return done();
   }
 
   const prior = priorWeekLog(state, item.ex, cycle, week);
   if (!prior) {
     // Unanchored: conservative, flagged. Fall back to the most recent instance as a hint only.
     out.hint = base.last ? base.last.weight : null;
-    return out;
+    return done();
   }
   out.anchored = true;
   const target = prior.targetReps || item.reps;
   const hit = prior.minReps >= target;
   out.basis = hit ? 'hit' : 'miss';
   out.priorWeight = prior.weight; out.priorReps = prior.minReps; out.priorTarget = target;
-  if (!hit) { out.weight = prior.weight; out.reps = target; return out; }
+  if (!hit) { out.weight = prior.weight; out.reps = target; return done(); }
   if (prog.k === 'reps') { out.weight = prior.weight; out.reps = target + prog.add; }
   else if (prog.k === 'wt') { out.weight = prior.weight + (prog.add || inc); out.reps = item.reps; }
   else { out.weight = prior.weight; out.reps = item.reps; } // hold
   if (scale !== 1 && out.weight) out.weight = roundDown(out.weight * scale, inc);
-  return out;
+  return done();
 }
 
 // ---- session construction ----

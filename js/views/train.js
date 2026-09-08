@@ -23,20 +23,30 @@ export function renderTrain() {
 }
 
 // ---- helpers ----
+function feederCount(p) { return (p.feeders || []).length; }
+function fdPrefix(p) { const n = feederCount(p); return n ? `${n} feeder${n > 1 ? 's' : ''}, then ` : ''; }
+
 function summary(p) {
   if (p.mode === 'cardio') return `${p.minutes} min`;
-  if (p.mode === 'test') return `Heavy triple. Current 1RM ${p.current}`;
+  if (p.mode === 'test') return `${fdPrefix(p)}heavy triple. Current 1RM ${p.current}`;
   if (p.mode === 'pct') {
     if (p.sets.some((x) => x.pct !== p.sets[0].pct)) {
       const a = p.sets.filter((x) => x.pct === p.sets[0].pct); const b = p.sets.filter((x) => x.pct !== p.sets[0].pct);
-      return `${a.length} × ${p.reps} @ ${a[0].weight} (${a[0].pct}%), then ${b.length} × ${p.reps} @ ${b[0].weight} (${b[0].pct}%)`;
+      return `${fdPrefix(p)}${a.length} × ${p.reps} @ ${a[0].weight} (${a[0].pct}%), then ${b.length} × ${p.reps} @ ${b[0].weight} (${b[0].pct}%)`;
     }
-    return `${p.sets.length} × ${p.reps} @ ${p.weight} (${p.pctLabel})`;
+    return `${fdPrefix(p)}${p.sets.length} × ${p.reps} @ ${p.weight} (${p.pctLabel})`;
   }
-  if (p.mode === 'top') return `Feeders, then ${p.sets.map((t) => `${t.reps} @ ${t.weight} (${t.pct}%)`).join(', ')}`;
+  if (p.mode === 'top') return `${fdPrefix(p)}${p.sets.map((t) => `${t.reps} @ ${t.weight} (${t.pct}%)`).join(', ')}`;
   const drop = p.drop ? ' drop set' : '';
-  if (p.anchored) return `${p.sets} × ${p.reps} @ ${p.weight}${drop}`;
-  return `${p.sets} × ${p.reps}${drop}, pick a weight`;
+  if (p.anchored) return `${fdPrefix(p)}${p.sets} × ${p.reps} @ ${p.weight}${drop}`;
+  return `${fdPrefix(p)}${p.sets} × ${p.reps}${drop}, pick a weight`;
+}
+
+function feederChips(p) {
+  const f = p.feeders || [];
+  if (!f.length) return null;
+  return el('div', { class: 'planned' }, f.map((x, k) => el('span', { style: 'font-style:italic;font-weight:400' },
+    `Feeder ${k + 1}: ${x.reps} @ ${x.weight != null ? x.weight : `${x.pct}% of work`}${x.of === '1RM' ? ` (${x.pct}%)` : ''}`)));
 }
 
 function basisTag(p) {
@@ -139,6 +149,13 @@ function prefill(e, p, s) {
   const working = e.sets.filter((x) => !x.feeder);
   const lastSet = e.sets[e.sets.length - 1];
   let weight = 0, reps = p.reps || 0, rpe = lastSet ? lastSet.rpe : 0;
+  // Prescribed feeders come first, in order, with the feeder flag already on.
+  const fdLogged = e.sets.filter((x) => x.feeder).length;
+  const feeders = p.feeders || [];
+  if (p.mode !== 'test' && !working.length && fdLogged < feeders.length) {
+    const f = feeders[fdLogged];
+    return (ui.draft[ui.exIdx] = { weight: f.weight ?? (p.hint ? roundDown(p.hint * f.pct / 100) : 0), reps: f.reps, rpe: 0, feeder: true });
+  }
   if (p.mode === 'top') { const nxt = p.sets[working.length] || p.sets[p.sets.length - 1]; weight = nxt.weight; reps = nxt.reps; }
   else if (p.mode === 'pct') { const nxt = p.sets[working.length] || p.sets[p.sets.length - 1]; weight = nxt.weight; reps = nxt.reps; }
   else if (p.mode === 'test') { weight = lastSet ? lastSet.weight : roundDown(p.current * 0.9); reps = 3; }
@@ -191,17 +208,17 @@ function exerciseScreen(s) {
 
 function plannedChips(p, e) {
   if (p.mode === 'top') return el('div', {},
-    el('div', { class: 'planned' }, p.feeders.map((f) => el('span', { style: 'font-style:italic;font-weight:400' }, `feeder ${f.reps} @ ${f.weight}`))),
+    feederChips(p),
     el('div', { class: 'planned' }, p.sets.map((t, k) => el('span', { class: 'top' }, `Top ${k + 1}: ${t.reps} @ ${t.weight} (${t.pct}%)`))),
   );
   if (p.mode === 'pct') {
     const groups = [];
     for (const st of p.sets) { const g = groups[groups.length - 1]; if (g && g.pct === st.pct) g.n += 1; else groups.push({ pct: st.pct, weight: st.weight, n: 1 }); }
-    return el('div', { class: 'planned' }, groups.map((g) => el('span', { class: 'top' }, `${g.n} × ${p.reps} @ ${g.weight} (${g.pct}%)`)));
+    return el('div', {}, feederChips(p), el('div', { class: 'planned' }, groups.map((g) => el('span', { class: 'top' }, `${g.n} × ${p.reps} @ ${g.weight} (${g.pct}%)`))));
   }
   const drop = p.drop ? el('span', { class: 'top' }, 'Drop set: strip and go again') : null;
-  if (p.anchored) return el('div', { class: 'planned' }, el('span', { class: 'top' }, `${p.sets} × ${p.reps} @ ${p.weight}`), drop);
-  return el('div', { class: 'planned' }, el('span', { class: 'top' }, `${p.sets} × ${p.reps}`), el('span', {}, p.hint ? `hint: last used ${p.hint}` : 'pick a weight, RPE 8'), drop);
+  if (p.anchored) return el('div', {}, feederChips(p), el('div', { class: 'planned' }, el('span', { class: 'top' }, `${p.sets} × ${p.reps} @ ${p.weight}`), drop));
+  return el('div', {}, feederChips(p), el('div', { class: 'planned' }, el('span', { class: 'top' }, `${p.sets} × ${p.reps}`), el('span', {}, p.hint ? `hint: last used ${p.hint}` : 'pick a weight, RPE 8'), drop));
 }
 
 function setBody(e, p, i, s, inc) {
@@ -217,21 +234,21 @@ function setBody(e, p, i, s, inc) {
   const logBtn = el('button', { class: 'btn primary big', style: 'margin-top:10px', onclick: () => {
     if (!d.reps && !d.feeder) { toast('Enter reps'); return; }
     if (p.rpeCap && d.rpe > p.rpeCap) toast(`RPE cap is ${p.rpeCap} this week`);
-    A.logSet(i, d);
-    delete ui.draft[i];
+    const set = { ...d }; delete ui.draft[i];
+    A.logSet(i, set);
     if (rest > 0) timer.start(rest);
   } }, 'Log set');
   const restCtl = el('div', { style: 'margin-top:10px' }, el('label', {}, 'Rest, seconds'), stepper({ value: rest, step: 15, min: 0, max: 900, onChange: (v) => A.setRest(e.ex, v) }));
   const rows = e.sets.map((st, k) => el('div', { class: `setrow ${st.feeder ? 'feeder' : ''}` },
     el('div', { class: 'idx' }, st.feeder ? 'F' : `#${e.sets.slice(0, k + 1).filter((x) => !x.feeder).length}`),
     el('div', {}, `${st.weight} lb`), el('div', {}, `× ${st.reps}`), el('div', {}, st.rpe ? `RPE ${st.rpe}` : ''),
-    el('button', { class: 'x', 'aria-label': 'delete set', onclick: () => { A.removeSet(i, k); delete ui.draft[i]; } }, '×'),
+    el('button', { class: 'x', 'aria-label': 'delete set', onclick: () => { delete ui.draft[i]; A.removeSet(i, k); } }, '×'),
   ));
   const working = e.sets.filter((x) => !x.feeder).length;
   const targetSets = p.mode === 'rel' ? p.sets : p.sets.length;
   return el('div', { class: 'card' },
     lastTimeBox(p), basisTag(p), plannedChips(p, e),
-    el('div', { style: 'font-weight:900;margin:6px 0' }, `Working sets logged: ${working} of ${targetSets}`),
+    el('div', { style: 'font-weight:900;margin:6px 0' }, `${feederCount(p) ? `Feeders ${e.sets.filter((x) => x.feeder).length} of ${feederCount(p)} · ` : ''}Working sets ${working} of ${targetSets}`),
     grid, feeder, logBtn, restCtl,
     rows.length ? el('div', { style: 'margin-top:12px' }, rows) : null,
     el('details', { style: 'margin-top:10px' }, el('summary', {}, 'RPE scale'), el('table', { class: 'rpe-help' }, RPE_SCALE.map(([n, t]) => el('tr', {}, el('td', { style: 'font-weight:900' }, n), el('td', {}, t))))),
@@ -265,15 +282,16 @@ function testBody(e, p, i, s) {
   const best = testResults({ exercises: [e] });
   const lift = Object.keys(best)[0];
   return el('div', { class: 'card amberbar' },
-    el('p', {}, 'Ramp in singles and doubles as feeders (not logged). Log the best triple. The most conservative formula is used and rounded down to 5 lb.'),
+    el('p', {}, 'Ramp through the feeder ladder below (not logged), then log the best triple. The most conservative formula is used and rounded down to 5 lb.'),
+    feederChips(p),
     el('div', { class: 'setgrid' },
       el('div', { class: 'cell' }, el('label', {}, 'Weight'), stepper({ value: d.weight, step: 5, max: 2000, onChange: (v) => { d.weight = v; refresh(); } })),
       el('div', { class: 'cell' }, el('label', {}, 'Reps'), stepper({ value: d.reps, step: 1, min: 1, max: 10, onChange: (v) => { d.reps = v; refresh(); } })),
       el('div', { class: 'cell' }, el('label', {}, 'RPE'), stepper({ value: d.rpe || 10, step: 1, min: 6, max: 13, onChange: (v) => { d.rpe = v; } })),
     ),
     el('div', { class: 'grid2', style: 'margin:10px 0' }, est, delta),
-    el('button', { class: 'btn primary big', onclick: () => { A.logSet(i, { ...d, feeder: false }); delete ui.draft[i]; toast('Triple logged'); } }, 'Log triple'),
-    e.sets.length ? el('div', { style: 'margin-top:12px' }, e.sets.map((st, k) => el('div', { class: 'setrow' }, el('div', { class: 'idx' }, `#${k + 1}`), el('div', {}, `${st.weight} lb`), el('div', {}, `× ${st.reps}`), el('div', {}, `→ ${est1RM(st.weight, st.reps)}`), el('button', { class: 'x', onclick: () => { A.removeSet(i, k); delete ui.draft[i]; } }, '×')))) : null,
+    el('button', { class: 'btn primary big', onclick: () => { const set = { ...d, feeder: false }; delete ui.draft[i]; A.logSet(i, set); toast('Triple logged'); } }, 'Log triple'),
+    e.sets.length ? el('div', { style: 'margin-top:12px' }, e.sets.map((st, k) => el('div', { class: 'setrow' }, el('div', { class: 'idx' }, `#${k + 1}`), el('div', {}, `${st.weight} lb`), el('div', {}, `× ${st.reps}`), el('div', {}, `→ ${est1RM(st.weight, st.reps)}`), el('button', { class: 'x', onclick: () => { delete ui.draft[i]; A.removeSet(i, k); } }, '×')))) : null,
     lift ? el('p', { style: 'font-weight:900;margin-top:10px' }, `Best: ${best[lift].weight} × ${best[lift].reps} → new ${LIFT_NAME[lift]} 1RM ${best[lift].oneRM}`) : null,
   );
 }

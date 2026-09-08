@@ -104,6 +104,36 @@ test('weight progression and drop sets', () => {
   assert.equal(p.drop, true); assert.equal(p.weight, 185); assert.equal(p.reps, 10);
 });
 
+test('feeders are prescribed on every lifting movement', () => {
+  const s = baseState();
+  // Speed work: two ramps below the working weight, same reps.
+  const de = prescribe(unityWeek(1)[0].items[0], s, 1, 1);
+  assert.deepEqual(de.feeders.map((f) => [f.weight, f.reps]), [[110, 2], [165, 2]]);
+  // Max effort: ladder stops 10% below the first top set.
+  const me1 = prescribe(unityWeek(1)[3].items[0], s, 1, 1); // top 70%
+  assert.deepEqual(me1.feeders.map((f) => f.pct), [40, 50, 60]);
+  const me9 = prescribe(unityWeek(9)[0].items[0], s, 1, 9); // top 85%
+  assert.deepEqual(me9.feeders.map((f) => f.pct), [40, 50, 60, 70]);
+  const peak = prescribe(weekTemplates(11)[0].items[0], s, 1, 11); // top 90%
+  assert.deepEqual(peak.feeders.map((f) => [f.pct, f.weight, f.reps]), [[40, 160, 5], [50, 200, 3], [60, 240, 3], [70, 280, 2], [80, 325, 1]]);
+  // Test day: singles ladder of the current 1RM.
+  const t = prescribe(weekTemplates(12)[1].items[0], s, 1, 12);
+  assert.deepEqual(t.feeders.map((f) => f.pct), [50, 60, 70, 80, 90]);
+  // Relative work: two on compounds, one on isolation, as a share of the working weight.
+  logged(s, 1, 1, 'leg_press', [[400, 10, 8], [400, 10, 9], [400, 10, 9]], 10, '2026-09-01T10:00:00Z');
+  logged(s, 1, 1, 'leg_ext', [[150, 15, 8], [150, 15, 9], [150, 15, 9]], 15, '2026-09-04T10:00:00Z');
+  const lp = prescribe(unityWeek(2)[0].items.find((i) => i.ex === 'leg_press'), s, 1, 2);
+  assert.deepEqual(lp.feeders.map((f) => [f.weight, f.reps]), [[240, 12], [320, 12]]);
+  const le = prescribe(unityWeek(2)[3].items.find((i) => i.ex === 'leg_ext'), s, 1, 2);
+  assert.deepEqual(le.feeders.map((f) => [f.weight, f.reps]), [[110, 18]]);
+  // Unanchored carries the percentage only.
+  const un = prescribe(unityWeek(1)[0].items.find((i) => i.ex === 'lying_leg_curl'), baseState(), 1, 1);
+  assert.deepEqual(un.feeders.map((f) => [f.weight, f.pct]), [[null, 75]]);
+  // Deload keeps one feeder. Cardio has none.
+  assert.equal(prescribe(weekTemplates(10)[0].items[0], s, 1, 10).feeders.length, 1);
+  assert.equal(prescribe(unityWeek(1)[0].items.at(-1), s, 1, 1).feeders, undefined);
+});
+
 test('percentage work ignores history and reads the stored max', () => {
   const s = baseState(); logged(s, 1, 1, 'de_squat', [[300, 2, 6]], 2, '2026-09-01T10:00:00Z');
   const p = prescribe(unityWeek(2)[0].items[0], s, 1, 2);
