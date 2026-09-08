@@ -20,6 +20,14 @@ Tests:
 node --test test/engine.test.mjs
 ```
 
+## On the phone
+
+Hosted at https://bbecht.github.io/unity-app/ from the `main` branch of https://github.com/bbecht/unity-app.
+Open that URL on the phone, add it to the home screen, open it once online, and it works offline after that.
+
+To ship a change: bump `VERSION` in `sw.js`, commit, and push `main`. Pages rebuilds in about a minute.
+The phone picks up the new files the next time the app is opened online.
+
 ## Starting point
 
 A fresh install opens at cycle 1, week 7, day 2, because the athlete was already two thirds through the
