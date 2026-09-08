@@ -137,7 +137,13 @@ function listScreen(s) {
     })),
     el('div', { class: 'stack' },
       el('button', { class: 'btn primary big', onclick: () => { ui.screen = 'finish'; render(); } }, 'Finish session'),
-      el('button', { class: 'btn small', onclick: () => { if (confirm('Discard this session? Logged sets will be lost.')) { A.discardActive(); timer.stop(); } } }, 'Discard session'),
+      ui.confirmDiscard
+        ? el('div', { class: 'card amberbar', style: 'margin:0' },
+          el('p', { style: 'font-weight:900' }, 'Discard this session? Logged sets will be lost.'),
+          el('div', { class: 'row' },
+            el('button', { class: 'btn primary', onclick: () => { ui.confirmDiscard = false; ui.draft = {}; ui.cardio = {}; timer.stop(); A.discardActive(); toast('Session discarded'); } }, 'Yes, discard'),
+            el('button', { class: 'btn', onclick: () => { ui.confirmDiscard = false; render(); } }, 'Keep it')))
+        : el('button', { class: 'btn small', onclick: () => { ui.confirmDiscard = true; render(); } }, 'Discard session'),
     ),
   );
 }

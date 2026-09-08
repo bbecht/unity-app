@@ -1,5 +1,5 @@
 // Offline shell cache. Bump VERSION when files change so clients pick up the new build.
-const VERSION = 'unity-v2';
+const VERSION = 'unity-v3';
 const SHELL = [
   './', './index.html', './manifest.webmanifest', './css/app.css',
   './js/main.js', './js/ui.js', './js/store.js', './js/program.js', './js/phases.js', './js/engine.js', './js/actions.js', './js/notion.js', './js/timer.js',

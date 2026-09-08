@@ -8,6 +8,8 @@ import { RECOVERY_GUIDANCE } from '../phases.js';
 import { flush, configured } from '../notion.js';
 import { render } from '../main.js';
 
+let confirmErase = false;
+
 const SUPPLEMENTS = [
   ['Intra-workout', '6 to 10 g essential amino acids plus 40 to 50 g carbohydrate sipped through training. Titrate the carbs up for bigger bodyparts and for whatever gets sorest. Goal: less soreness, faster recovery.'],
   ['Creatine monohydrate', '5 g daily. Timing does not matter.'],
@@ -129,7 +131,13 @@ function backup(s) {
     ta,
     el('button', { class: 'btn', onclick: () => { try { store.importJSON(ta.value); toast('Restored'); } catch (e) { toast(e.message); } } }, 'Restore from pasted text'),
     el('hr'),
-    el('button', { class: 'btn', onclick: () => { if (confirm('Erase everything on this device? Download a backup first.')) { store.resetAll(); toast('Reset'); } } }, 'Erase all data on this device'),
+    confirmErase
+      ? el('div', { class: 'card amberbar', style: 'margin:0' },
+        el('p', { style: 'font-weight:900' }, 'Erase everything on this device? Download a backup first.'),
+        el('div', { class: 'row' },
+          el('button', { class: 'btn primary', onclick: () => { confirmErase = false; store.resetAll(); toast('Erased'); } }, 'Yes, erase'),
+          el('button', { class: 'btn', onclick: () => { confirmErase = false; render(); } }, 'Keep it')))
+      : el('button', { class: 'btn', onclick: () => { confirmErase = true; render(); } }, 'Erase all data on this device'),
   );
 }
 
