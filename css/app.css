@@ -1,0 +1,140 @@
+/* Unity: maximum contrast, blue and amber accents only, meaning never carried by hue alone. */
+:root {
+  --fg: #000;
+  --bg: #fff;
+  --blue: #0033ff;
+  --amber: #ffb000;
+  --tap: 56px;
+  --border: 3px;
+}
+html[data-theme="dark"] {
+  --fg: #fff;
+  --bg: #000;
+  --blue: #5c8dff; /* lighter so it never sits near black */
+  --amber: #ffb000;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); }
+body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 19px; line-height: 1.35; -webkit-text-size-adjust: 100%; padding-bottom: calc(var(--tap) + 32px); }
+h1, h2, h3 { margin: 0 0 8px; line-height: 1.15; }
+h1 { font-size: 28px; font-weight: 900; }
+h2 { font-size: 23px; font-weight: 800; }
+h3 { font-size: 19px; font-weight: 800; }
+p { margin: 0 0 10px; }
+a { color: var(--fg); text-decoration: underline; text-decoration-thickness: 2px; }
+button, input, select, textarea { font: inherit; color: var(--fg); background: var(--bg); }
+input, select, textarea { border: var(--border) solid var(--fg); border-radius: 6px; padding: 10px 12px; min-height: var(--tap); width: 100%; }
+input:focus, select:focus, textarea:focus, button:focus-visible { outline: 4px solid var(--blue); outline-offset: 2px; }
+input[type="number"] { font-size: 26px; font-weight: 800; text-align: center; padding: 6px; }
+textarea { min-height: 80px; resize: vertical; }
+label { display: block; font-weight: 800; margin-bottom: 4px; font-size: 16px; text-transform: uppercase; letter-spacing: 0.04em; }
+
+/* Buttons: primary = filled, secondary = outlined. Both have thick borders so they read as buttons without color. */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: var(--tap); padding: 10px 18px; border: var(--border) solid var(--fg); border-radius: 8px; font-weight: 900; font-size: 19px; cursor: pointer; text-decoration: none; width: 100%; user-select: none; -webkit-tap-highlight-color: transparent; }
+.btn.primary { background: var(--fg); color: var(--bg); }
+.btn.accent { background: var(--amber); color: #000; border-color: #000; }
+html[data-theme="dark"] .btn.accent { border-color: #fff; }
+.btn.small { min-height: 44px; font-size: 16px; padding: 6px 12px; width: auto; }
+.btn.big { min-height: 72px; font-size: 24px; }
+.btn:active { transform: translateY(1px); }
+.btn[disabled] { opacity: 1; border-style: dashed; cursor: not-allowed; }
+.row { display: flex; gap: 10px; align-items: stretch; }
+.row > * { flex: 1; }
+.stack { display: flex; flex-direction: column; gap: 12px; }
+.wrap { padding: 14px 14px 20px; max-width: 760px; margin: 0 auto; }
+.card { border: var(--border) solid var(--fg); border-radius: 10px; padding: 14px; margin-bottom: 14px; background: var(--bg); }
+.card.dashed { border-style: dashed; }
+.card.bluebar { border-left-width: 14px; border-left-color: var(--blue); }
+.card.amberbar { border-left-width: 14px; border-left-color: var(--amber); }
+.tag { display: inline-block; border: 2px solid var(--fg); border-radius: 999px; padding: 2px 10px; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; margin-right: 6px; }
+.tag.fill { background: var(--fg); color: var(--bg); }
+.tag.amber { background: var(--amber); color: #000; border-color: #000; }
+.muted { font-weight: 400; } /* still pure fg, never grey */
+.big { font-size: 34px; font-weight: 900; line-height: 1.1; }
+.huge { font-size: 52px; font-weight: 900; line-height: 1; }
+.right { text-align: right; }
+.center { text-align: center; }
+hr { border: 0; border-top: 2px solid var(--fg); margin: 14px 0; }
+ul { padding-left: 22px; margin: 0 0 10px; }
+li { margin-bottom: 4px; }
+table { border-collapse: collapse; width: 100%; font-size: 17px; }
+th, td { border: 2px solid var(--fg); padding: 8px 6px; text-align: left; vertical-align: top; }
+th { background: var(--fg); color: var(--bg); font-weight: 900; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.scroll-x { overflow-x: auto; }
+
+/* Top bar */
+.topbar { position: sticky; top: 0; z-index: 20; background: var(--bg); border-bottom: var(--border) solid var(--fg); padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.topbar .pos { font-weight: 900; font-size: 18px; }
+.topbar .phase { font-weight: 800; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; }
+.offline { font-size: 13px; font-weight: 800; border: 2px dashed var(--fg); border-radius: 999px; padding: 2px 8px; }
+
+/* Rest timer bar: amber with black text, big digits, always visible while running. */
+.timerbar { position: sticky; top: 0; z-index: 30; background: var(--amber); color: #000; border-bottom: var(--border) solid #000; display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; gap: 8px; }
+.timerbar .digits { font-size: 40px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.timerbar .btn { width: auto; min-height: 48px; border-color: #000; color: #000; background: var(--amber); font-size: 18px; }
+.timerbar .btn.primary { background: #000; color: var(--amber); }
+.timerbar .track { position: absolute; left: 0; bottom: -3px; height: 8px; background: #000; }
+
+/* Bottom nav: four large buttons, active marked by filled background plus a bar, never by color alone. */
+.nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 20; display: grid; grid-template-columns: repeat(4, 1fr); background: var(--bg); border-top: var(--border) solid var(--fg); }
+.nav button { min-height: calc(var(--tap) + 8px); border: 0; border-right: 2px solid var(--fg); font-weight: 800; font-size: 15px; text-transform: uppercase; letter-spacing: 0.04em; background: var(--bg); color: var(--fg); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+.nav button:last-child { border-right: 0; }
+.nav button .ico { font-size: 22px; line-height: 1; }
+.nav button.active { background: var(--fg); color: var(--bg); box-shadow: inset 0 6px 0 var(--blue); }
+
+/* Exercise list */
+.exlist .ex { display: flex; align-items: center; gap: 12px; min-height: 72px; padding: 10px 12px; border: var(--border) solid var(--fg); border-radius: 10px; margin-bottom: 10px; cursor: pointer; background: var(--bg); width: 100%; text-align: left; }
+.exlist .ex .n { font-weight: 900; font-size: 20px; }
+.exlist .ex .sub { font-size: 16px; }
+.exlist .ex .mark { width: 40px; height: 40px; border: 3px solid var(--fg); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 22px; flex: none; }
+.exlist .ex.done .mark { background: var(--fg); color: var(--bg); }
+.exlist .ex.done .n { text-decoration: line-through; text-decoration-thickness: 3px; }
+.exlist .ex .grow { flex: 1; }
+
+/* Set logging */
+.setgrid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.setgrid .cell label { text-align: center; }
+.stepper { display: flex; align-items: stretch; border: var(--border) solid var(--fg); border-radius: 8px; overflow: hidden; }
+.stepper button { width: 52px; min-height: var(--tap); border: 0; background: var(--fg); color: var(--bg); font-size: 28px; font-weight: 900; cursor: pointer; }
+.stepper input { border: 0; border-radius: 0; min-height: var(--tap); }
+.setrow { display: grid; grid-template-columns: 44px 1fr 1fr 1fr 44px; gap: 6px; align-items: center; padding: 6px 0; border-bottom: 2px solid var(--fg); font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.setrow .idx { font-size: 16px; }
+.setrow.feeder { font-weight: 400; font-style: italic; }
+.setrow .x { width: 44px; height: 44px; border: 2px solid var(--fg); border-radius: 6px; background: var(--bg); font-weight: 900; font-size: 18px; cursor: pointer; }
+.planned { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 10px; }
+.planned span { border: 2px solid var(--fg); border-radius: 6px; padding: 4px 8px; font-weight: 800; font-size: 16px; }
+.planned span.top { background: var(--fg); color: var(--bg); }
+.lasttime { border: 2px dashed var(--fg); border-radius: 8px; padding: 8px 12px; font-weight: 800; margin-bottom: 10px; }
+.flag { display: inline-block; background: var(--amber); color: #000; border: 2px solid #000; border-radius: 6px; padding: 2px 8px; font-weight: 900; font-size: 15px; }
+.rpe-help { font-size: 15px; }
+.rpe-help td { padding: 4px 6px; }
+.check { display: flex; align-items: center; gap: 10px; min-height: 48px; font-weight: 800; }
+.check input[type="checkbox"] { width: 32px; height: 32px; min-height: 0; accent-color: var(--blue); }
+
+/* Charts: single-series, black marks, direct labels. */
+.chart svg { width: 100%; height: auto; display: block; }
+.chart text { font-family: inherit; font-weight: 800; fill: var(--fg); }
+.chart .axis { stroke: var(--fg); stroke-width: 2; }
+.chart .bar { fill: var(--fg); }
+.chart .bar.accent { fill: var(--blue); }
+.chart .bar.amber { fill: var(--amber); stroke: var(--fg); stroke-width: 2; }
+.chart .line { fill: none; stroke: var(--fg); stroke-width: 3; }
+.chart .line.avg { stroke: var(--blue); stroke-width: 4; }
+.chart .dot { fill: var(--bg); stroke: var(--fg); stroke-width: 2; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-weight: 800; font-size: 15px; margin-bottom: 6px; }
+.legend .sw { display: inline-block; width: 22px; height: 12px; vertical-align: middle; margin-right: 4px; border: 2px solid var(--fg); }
+.legend .sw.line { height: 0; border-width: 2px 0 0; }
+.legend .sw.avg { height: 0; border-width: 4px 0 0; border-color: var(--blue); }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.stat { border: var(--border) solid var(--fg); border-radius: 10px; padding: 10px; text-align: center; }
+.stat .v { font-size: 30px; font-weight: 900; line-height: 1.1; }
+.stat .l { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
+details summary { cursor: pointer; font-weight: 900; font-size: 19px; min-height: 44px; display: flex; align-items: center; }
+.toast { position: fixed; left: 50%; bottom: calc(var(--tap) + 24px); transform: translateX(-50%); background: var(--fg); color: var(--bg); border: 3px solid var(--bg); padding: 12px 18px; border-radius: 10px; font-weight: 900; z-index: 50; max-width: 90vw; }
+@media (min-width: 700px) {
+  body { font-size: 18px; }
+  .nav { max-width: 760px; margin: 0 auto; left: 0; right: 0; border-left: var(--border) solid var(--fg); border-right: var(--border) solid var(--fg); }
+}
